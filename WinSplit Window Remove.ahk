@@ -1,15 +1,15 @@
 #NoEnv
 #SingleInstance, Force
 SetWorkingDir, %A_ScriptDir%
+
 WinGetClass, wClass, A
+WinGet, wProc, ProcessName, A
 
-global wsPath, wsConfig, version:="1.0.0"
 
-
-;{============= LOAD WINSPLIT CONFIG ============>>>
+;{============= SCRIPT SETTINGS ============>>>
 	
-	wsPath   := "C:\Program Files (x86)\WinSplit Revolution\WinSplit.exe"
-	wsConfig := new xml("WinSplit_AutoPlacement", "C:\Users\rameen\AppData\Roaming\Winsplit Revolution\auto_placement.xml")
+	global wsConfig:=new xml("WinSplit_AutoPlacement", "C:\Users\rameen\AppData\Roaming\Winsplit Revolution\auto_placement.xml"), version:="1.3.0"
+	
 	if (!wsConfig.FileExists) {
 		m("ico:!", "Couldn't load the WinSplit XML")
 		ExitApp
@@ -17,10 +17,15 @@ global wsPath, wsConfig, version:="1.0.0"
 ;}
 
 
-;{============= GET USER INPUT ============>>>
+;{=========== CHECK WIN / GET USER INPUT ==========>>>
 	
-	InputBox, winClass,, Enter the Window Class to be removed from the Auto Placements`n`nCASE SENSITIVE!,,, 150,,,,, %wClass%
-	if (ErrorLevel || !winClass) {
+	if (remNode:=wsConfig.ssn("//Application[@Name='" wProc "::" wClass "']")){
+		RemoveNode(remNode)
+		ExitApp
+	}
+	
+	InputBox, winLabel,, Enter the Window Class to be removed from the Auto Placements`n`nCASE SENSITIVE!,,, 150,,,,, %wProc%::%wClass%
+	if (ErrorLevel || !winLabel) {
 		(ErrorLevel < 1) ? m("ico:!", "Invalid input!", "time:1.5") : ""
 		ExitApp
 	}
@@ -29,7 +34,7 @@ global wsPath, wsConfig, version:="1.0.0"
 
 ;{============= FIND MATCHING WINDOWS ============>>>
 	
-	list:="", count:=0, matchNodes:=wsConfig.sn("//Application[@Name[contains(.,'" winClass "')]]")
+	list:="", count:=0, matchNodes:=wsConfig.sn("//Application[@Name[contains(.,'" winLabel "')]]")
 	while node:=matchNodes.Item[A_Index-1], ea:=wsConfig.ea(node) {
 		list .= (list ? "`n" : "") (matchNodes.Item[1] ? A_Index ")`t" : "") ea.Name
 		count++
@@ -67,23 +72,23 @@ global wsPath, wsConfig, version:="1.0.0"
 	
 	if (!remNode:=wsConfig.ssn("//Application[@Name='" remWin "']"))
 		m("ico:!", "Error removing the node from the XML")
+	else
+		RemoveNode(remNode)
 ;}
+ExitApp
 
-
-;{============= REMOVE WINDOW & RESTART WINSPLIT ============>>>
-	
+RemoveNode(remNode) {
 	try {
 		Run, taskkill /F /IM WinSplit*
-		wsConfig.remove(remNode), wsConfig.save(1)
-		;~ m("Done!", "`nPress OK to Reload WinSplit", "ico:i")
+		wsConfig.remove(remNode)
+		wsConfig.save(1)
 		TrayTip, WinSplit Window Remover, Done! Window removed..., 1.5
 		sleep 700
 		Run, %wsPath%
-	} catch e {
-		m("ico:!", "Something went wrong...`n", e.what, "`n" e.message)
 	}
-;}
-ExitApp
+	catch e 
+		m("ico:!", "Something went wrong...`n", e.what, "`n" e.message)
+}
 
 
 ListGUI(listItems) {
