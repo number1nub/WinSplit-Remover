@@ -1,26 +1,51 @@
 #NoEnv
 #SingleInstance, Force
 SetWorkingDir, %A_ScriptDir%
-
 WinGetClass, wClass, A
 WinGet, wProc, ProcessName, A
 
+;______________________________________________________________________________
+;******************************************************************************
+; SET APP INFO & COMILER DIRECTIVES
+;******************************************************************************
+AppName    := "WinSplit Window Remove"
+;@Ahk2Exe-Let AppName = %A_PriorLine~U)^(.+"){1}(.+)".*$~$2%
 
-;{============= SCRIPT SETTINGS ============>>>
-	
-	global wsConfig:=new xml("WinSplit_AutoPlacement", "C:\Users\rameen\AppData\Roaming\Winsplit Revolution\auto_placement.xml"), version:="1.3.0"
-	
-	if (!wsConfig.FileExists) {
-		m("ico:!", "Couldn't load the WinSplit XML")
-		ExitApp
-	}
-;}
+AppVersion := "1.4.0"
+;@Ahk2Exe-Let AppVersion = %A_PriorLine~U)^(.+"){1}(.+)".*$~$2%
 
+AppCompany := "WSNHapps"
+;@Ahk2Exe-Let AppCompany = %A_PriorLine~U)^(.+"){1}(.+)".*$~$2%
+
+AppDesc    := "A simple utility that allows for quickly removing entries from WinSplit Revolution's Auto-Placement windows list"
+;@Ahk2Exe-Let AppDesc = %A_PriorLine~U)^(.+"){1}(.+)".*$~$2%
+
+;@Ahk2Exe-ExeName %A_ScriptDir%\build\%U_AppName%.exe
+;@Ahk2Exe-Let IcoPath = %A_ScriptDir%\res\%A_ScriptName~\.[^\.]+$~.ico%
+;@Ahk2Exe-SetMainIcon %U_IcoPath%
+;@Ahk2Exe-Bin %A_ScriptDir%\res\compiler\AutoHotkeySC.bin
+;@Ahk2Exe-SetProductName %U_AppName%
+;@Ahk2Exe-SetOrigFilename %U_AppName%
+;@Ahk2Exe-SetInternalName %U_AppName%
+;@Ahk2Exe-SetVersion %U_AppVersion%
+;@Ahk2Exe-SetCompanyName %U_AppCompany%
+;@Ahk2Exe-SetDescription %U_AppDesc%
+;@Ahk2Exe-Obey U_year, FormatTime U_year`,`, yyyy
+;@Ahk2Exe-SetCopyright Copyright © %U_year% %U_AppCompany%
+;______________________________________________________________________________
+;******************************************************************************
+
+global wsConfig:=new xml("WinSplit_AutoPlacement", A_AppData "\Winsplit Revolution\auto_placement.xml")
+if (!wsConfig.FileExists) {
+	m("ico:!", "Couldn't load the WinSplit XML")
+	ExitApp
+}
 
 ;{=========== CHECK WIN / GET USER INPUT ==========>>>
 	
-	if (remNode:=wsConfig.ssn("//Application[@Name='" wProc "::" wClass "']")){
-		RemoveNode(remNode)
+	if (remNode:=wsConfig.ssn("//Application[@Name='" wProc "::" wClass "']")) {
+		if (m("ico:?", "btn:ync", "Delete entry for """ wsConfig.ea(remNode).Name """?") = "YES")
+			RemoveNode(remNode)
 		ExitApp
 	}
 	
